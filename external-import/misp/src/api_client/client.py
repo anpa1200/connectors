@@ -77,6 +77,7 @@ class MISPClient:
         with_attachments: bool,
         limit: int,
         page: int = 1,
+        attribute_timestamp: datetime | None = None,
     ) -> Generator[EventRestSearchListItem, None, None]:
         """
         Search for events in MISP with the given parameters.
@@ -94,6 +95,10 @@ class MISPClient:
                     or_parameters=included_org_creators,
                     not_parameters=excluded_org_creators,
                 )
+
+                search_kwargs = {date_field_filter: date_value_filter}
+                if attribute_timestamp is not None:
+                    search_kwargs["attribute_timestamp"] = attribute_timestamp
 
                 results = self._client.search(
                     controller="events",
@@ -113,7 +118,7 @@ class MISPClient:
                         if date_field_filter == "date_from"
                         else f"Event.{datetime_attribute} ASC"
                     ),
-                    **{date_field_filter: date_value_filter},
+                    **search_kwargs,
                 )
                 if isinstance(results, dict) and results.get("errors"):
                     status_code, error_message = results.get("errors")
